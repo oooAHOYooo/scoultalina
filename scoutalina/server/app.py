@@ -74,6 +74,7 @@ def create_app(config_name: str = 'development') -> Flask:
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
+    login_manager.login_view = 'web.login'
     CORS(app, resources={r"/*": {"origins": ["http://localhost:5000", r"*.onrender.com", "https://scoutalina.com", "http://scoutalina.com"]}})
 
     # Blueprints
@@ -81,6 +82,17 @@ def create_app(config_name: str = 'development') -> Flask:
     from routes.web import web_bp  # type: ignore
     app.register_blueprint(api_bp, url_prefix='/api')
     app.register_blueprint(web_bp, url_prefix='/')
+
+    # Flask-Login user loader
+    from models import User  # late import to avoid circulars
+
+    @login_manager.user_loader
+    def load_user(user_id: str):  # type: ignore
+        try:
+            from uuid import UUID as _UUID
+            return db.session.get(User, _UUID(user_id))
+        except Exception:  # noqa: BLE001
+            return None
 
     # Health
     @app.get('/health')

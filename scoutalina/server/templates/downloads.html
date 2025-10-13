@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="downloads">
+  <h1>Downloads</h1>
+  <p>Install ScoutAlina on your Android device.</p>
+  <ul>
+    <li>
+      <a href="/static/apk/scoutalina-debug.apk" download>Download Debug APK</a>
+    </li>
+    <li>
+      <a href="/static/apk/scoutalina-release.apk" download>Download Release APK</a>
+    </li>
+  </ul>
+  {% if config.DEBUG %}
+  <form method="post" action="/dev/build-apk">
+    <button type="submit">Build Debug APK (dev only)</button>
+  </form>
+  {% endif %}
+  <p>After installing, open the app and enter your API key from the admin user.</p>
+</section>
+{% endblock %}
+
+

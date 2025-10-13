@@ -1,10 +1,101 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+
 {% block content %}
-<section class="dashboard">
-  <h1>Dashboard</h1>
-  <p>Welcome to ScoutAlina. TODO: Show nearby properties and recent discoveries.</p>
-  <div id="map">TODO: Map placeholder</div>
-</section>
+<div class="dashboard-container">
+    <!-- Stats Panel (Left Sidebar) -->
+    <aside class="stats-panel">
+        <h2>Your Collection</h2>
+        
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="total-properties">0</div>
+                <div class="stat-label">Properties</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="total-distance">0</div>
+                <div class="stat-label">km Driven</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="total-routes">0</div>
+                <div class="stat-label">Routes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="neighborhoods">0</div>
+                <div class="stat-label">Areas</div>
+            </div>
+        </div>
+        
+        <div class="rarity-section">
+            <h3>Rarity Breakdown</h3>
+            <div class="rarity-bars">
+                <div class="rarity-bar legendary">
+                    <span class="rarity-label">★★★ Legendary</span>
+                    <div class="bar-fill" data-rarity="legendary"></div>
+                    <span class="rarity-count">0</span>
+                </div>
+                <div class="rarity-bar epic">
+                    <span class="rarity-label">★★ Epic</span>
+                    <div class="bar-fill" data-rarity="epic"></div>
+                    <span class="rarity-count">0</span>
+                </div>
+                <div class="rarity-bar rare">
+                    <span class="rarity-label">★ Rare</span>
+                    <div class="bar-fill" data-rarity="rare"></div>
+                    <span class="rarity-count">0</span>
+                </div>
+                <div class="rarity-bar common">
+                    <span class="rarity-label">Common</span>
+                    <div class="bar-fill" data-rarity="common"></div>
+                    <span class="rarity-count">0</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="week-stats">
+            <h3>This Week</h3>
+            <ul>
+                <li><strong id="week-routes">0</strong> routes</li>
+                <li><strong id="week-properties">0</strong> discoveries</li>
+                <li><strong id="week-distance">0</strong> km</li>
+            </ul>
+        </div>
+    </aside>
+    
+    <!-- Map Container (Center) -->
+    <div class="map-container">
+        <div class="map-controls">
+            <input type="text" id="date-picker" placeholder="Select date">
+            <button id="refresh-btn" class="btn-icon">↻</button>
+        </div>
+        <div id="map"></div>
+    </div>
+    
+    <!-- Watchlist Panel (Right Sidebar, initially hidden) -->
+    <aside class="watchlist-panel" id="watchlist-panel">
+        <div class="panel-header">
+            <h2>Watchlist</h2>
+            <button id="close-watchlist" class="btn-close">×</button>
+        </div>
+        <div id="watchlist-content" class="watchlist-items">
+            <!-- Populated by JS -->
+        </div>
+    </aside>
+</div>
+
+<!-- Property Modal -->
+<div id="property-modal" class="modal">
+    <div class="modal-content">
+        <button class="modal-close">×</button>
+        <div class="modal-body">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+    </div>
+
+<!-- Discovery Animation Modal -->
+<div id="discovery-modal" class="discovery-modal">
+    <!-- Populated by JS -->
+</div>
 {% endblock %}
 
 

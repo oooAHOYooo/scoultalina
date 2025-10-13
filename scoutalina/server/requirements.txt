@@ -9,5 +9,6 @@ gunicorn==21.2.0
 requests==2.31.0
 python-dotenv==1.0.0
 alembic==1.12.1
+click==8.1.7
 
 
