@@ -67,7 +67,7 @@ def create_app(config_name: str = 'development') -> Flask:
     app = Flask(__name__, instance_relative_config=False)
 
     # Load config
-    from config import config as config_map  # type: ignore
+    from .config import config as config_map  # type: ignore
     app.config.from_object(config_map.get(config_name, config_map['default']))
 
     # Extensions
@@ -78,13 +78,13 @@ def create_app(config_name: str = 'development') -> Flask:
     CORS(app, resources={r"/*": {"origins": ["http://localhost:5000", r"*.onrender.com", "https://scoutalina.com", "http://scoutalina.com"]}})
 
     # Blueprints
-    from routes.api import api_bp  # type: ignore
-    from routes.web import web_bp  # type: ignore
+    from .routes.api import api_bp  # type: ignore
+    from .routes.web import web_bp  # type: ignore
     app.register_blueprint(api_bp, url_prefix='/api')
     app.register_blueprint(web_bp, url_prefix='/')
 
     # Flask-Login user loader
-    from models import User  # late import to avoid circulars
+    from .models import User  # late import to avoid circulars
 
     @login_manager.user_loader
     def load_user(user_id: str):  # type: ignore
@@ -102,6 +102,11 @@ def create_app(config_name: str = 'development') -> Flask:
     # Logging and errors
     _configure_logging(app)
     _register_error_handlers(app)
+
+    # Expose config to templates
+    @app.context_processor
+    def inject_config():  # type: ignore
+        return dict(config=app.config)
 
     return app
 

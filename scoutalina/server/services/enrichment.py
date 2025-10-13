@@ -16,8 +16,8 @@ from typing import Any, Dict, List, Optional
 import requests
 from sqlalchemy import text
 
-from app import db
-from models import Property, Route, RouteProperty
+from ..app import db
+from ..models import Property, Route, RouteProperty
 
 
 logger = logging.getLogger(__name__)

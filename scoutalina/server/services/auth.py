@@ -10,8 +10,8 @@ from typing import Any, Callable, Optional, Tuple, TypeVar, cast
 from flask import g, jsonify, request
 from flask_login import login_required
 
-from app import db
-from models import User
+from ..app import db
+from ..models import User
 
 F = TypeVar("F", bound=Callable[..., Any])
 

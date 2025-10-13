@@ -14,9 +14,9 @@ from flask import Blueprint, jsonify, request, g
 from sqlalchemy import func, text
 from sqlalchemy.orm import joinedload
 
-from app import db
-from models import Property, Route, RoutePoint, RouteProperty, User, Watchlist
-from services.auth import require_api_key
+from ..app import db
+from ..models import Property, Route, RoutePoint, RouteProperty, User, Watchlist
+from ..services.auth import require_api_key
 
 
 api_bp = Blueprint("api", __name__)

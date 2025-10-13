@@ -1,101 +1,206 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<script src="https://cdn.tailwindcss.com"></script>
+{% endblock %}
+
 {% block content %}
-<div class="dashboard-container">
-    <!-- Stats Panel (Left Sidebar) -->
-    <aside class="stats-panel">
-        <h2>Your Collection</h2>
-        
-        <div class="stat-grid">
-            <div class="stat-card">
-                <div class="stat-value" id="total-properties">0</div>
-                <div class="stat-label">Properties</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="total-distance">0</div>
-                <div class="stat-label">km Driven</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="total-routes">0</div>
-                <div class="stat-label">Routes</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="neighborhoods">0</div>
-                <div class="stat-label">Areas</div>
-            </div>
+<div class="text-base md:text-[17px]">
+  <!-- Page Header -->
+  <header class="px-4 lg:px-6 py-3 bg-[var(--color-surface)] border-b border-white/5">
+    <div class="grid grid-cols-3 items-center">
+      <!-- Left: Logo/Title -->
+      <div class="flex items-center gap-3">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ScoutAlina" class="w-8 h-8" />
+        <span class="text-[var(--color-primary)] font-semibold">ScoutAlina</span>
+      </div>
+      <!-- Center: Page Title -->
+      <div class="text-center">
+        <h1 class="text-lg md:text-xl font-semibold">Dashboard</h1>
+      </div>
+      <!-- Right: User menu -->
+      <div x-data="{ open:false }" class="justify-self-end relative">
+        <button @click="open=!open" class="flex items-center gap-2 rounded-full focus:outline-none">
+          <img src="https://api.dicebear.com/7.x/shapes/svg?seed=user" class="w-8 h-8 rounded-full" alt="User"/>
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z"/></svg>
+        </button>
+        <div x-show="open" @click.outside="open=false" class="absolute right-0 mt-2 w-44 bg-[var(--color-surface)] border border-white/10 rounded-lg shadow-xl z-20">
+          <a href="/downloads" class="block px-4 py-2 hover:bg-white/5">Downloads</a>
+          <a href="#" id="watchlist-toggle" class="block px-4 py-2 hover:bg-white/5">Watchlist</a>
+          <a href="/logout" class="block px-4 py-2 hover:bg-white/5">Logout</a>
         </div>
-        
-        <div class="rarity-section">
-            <h3>Rarity Breakdown</h3>
-            <div class="rarity-bars">
-                <div class="rarity-bar legendary">
-                    <span class="rarity-label">★★★ Legendary</span>
-                    <div class="bar-fill" data-rarity="legendary"></div>
-                    <span class="rarity-count">0</span>
-                </div>
-                <div class="rarity-bar epic">
-                    <span class="rarity-label">★★ Epic</span>
-                    <div class="bar-fill" data-rarity="epic"></div>
-                    <span class="rarity-count">0</span>
-                </div>
-                <div class="rarity-bar rare">
-                    <span class="rarity-label">★ Rare</span>
-                    <div class="bar-fill" data-rarity="rare"></div>
-                    <span class="rarity-count">0</span>
-                </div>
-                <div class="rarity-bar common">
-                    <span class="rarity-label">Common</span>
-                    <div class="bar-fill" data-rarity="common"></div>
-                    <span class="rarity-count">0</span>
-                </div>
-            </div>
-        </div>
-        
-        <div class="week-stats">
-            <h3>This Week</h3>
-            <ul>
-                <li><strong id="week-routes">0</strong> routes</li>
-                <li><strong id="week-properties">0</strong> discoveries</li>
-                <li><strong id="week-distance">0</strong> km</li>
-            </ul>
-        </div>
-    </aside>
-    
-    <!-- Map Container (Center) -->
-    <div class="map-container">
-        <div class="map-controls">
-            <input type="text" id="date-picker" placeholder="Select date">
-            <button id="refresh-btn" class="btn-icon">↻</button>
-        </div>
-        <div id="map"></div>
+      </div>
     </div>
-    
-    <!-- Watchlist Panel (Right Sidebar, initially hidden) -->
-    <aside class="watchlist-panel" id="watchlist-panel">
-        <div class="panel-header">
-            <h2>Watchlist</h2>
-            <button id="close-watchlist" class="btn-close">×</button>
-        </div>
-        <div id="watchlist-content" class="watchlist-items">
-            <!-- Populated by JS -->
-        </div>
-    </aside>
-</div>
+  </header>
 
-<!-- Property Modal -->
-<div id="property-modal" class="modal">
-    <div class="modal-content">
-        <button class="modal-close">×</button>
-        <div class="modal-body">
-            <!-- Populated by JS -->
+  <!-- Desktop Layout -->
+  <section class="hidden lg:block px-4 py-4">
+    <div class="grid grid-cols-12 gap-4">
+      <!-- KPI Row -->
+      <div class="col-span-12 grid grid-cols-12 gap-4">
+        <div class="col-span-3 bg-[var(--color-surface)] rounded-xl p-4 border border-white/10">
+          <div class="text-xs text-[var(--color-text-dim)]">Properties</div>
+          <div id="total-properties" class="text-2xl font-bold mt-1">0</div>
         </div>
+        <div class="col-span-3 bg-[var(--color-surface)] rounded-xl p-4 border border-white/10">
+          <div class="text-xs text-[var(--color-text-dim)]">km Driven</div>
+          <div id="total-distance" class="text-2xl font-bold mt-1">0</div>
+        </div>
+        <div class="col-span-3 bg-[var(--color-surface)] rounded-xl p-4 border border-white/10">
+          <div class="text-xs text-[var(--color-text-dim)]">Routes</div>
+          <div id="total-routes" class="text-2xl font-bold mt-1">0</div>
+        </div>
+        <div class="col-span-3 bg-[var(--color-surface)] rounded-xl p-4 border border-white/10">
+          <div class="text-xs text-[var(--color-text-dim)]">Areas</div>
+          <div id="neighborhoods" class="text-2xl font-bold mt-1">0</div>
+        </div>
+      </div>
+
+      <!-- Filters Bar -->
+      <div class="col-span-12 bg-[var(--color-surface)] rounded-xl p-3 border border-white/10" x-data="Alpine.store('filtersStore')">
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- Date Presets -->
+          <div class="flex items-center gap-1" role="group" aria-label="Date range presets">
+            <button @click="setPreset('today')" class="px-3 py-2 text-sm rounded-md border border-white/10 hover:bg-white/5">Today</button>
+            <button @click="setPreset('7d')" class="px-3 py-2 text-sm rounded-md border border-white/10 hover:bg-white/5">7d</button>
+            <button @click="setPreset('30d')" class="px-3 py-2 text-sm rounded-md border border-white/10 hover:bg-white/5">30d</button>
+            <div x-data="{open:false,start:'',end:''}" class="relative">
+              <button @click="open=!open" class="px-3 py-2 text-sm rounded-md border border-white/10 hover:bg:white/5">Custom</button>
+              <div x-show="open" @keydown.escape.prevent.stop="open=false" @click.outside="open=false" class="absolute z-20 mt-2 p-3 rounded-lg bg-black/50 backdrop-blur border border-white/10">
+                <div class="flex items-center gap-2">
+                  <input type="datetime-local" x-model="start" class="px-2 py-1 rounded bg-black/30 border border-white/10"/>
+                  <span>–</span>
+                  <input type="datetime-local" x-model="end" class="px-2 py-1 rounded bg-black/30 border border-white/10"/>
+                  <button @click="$store.filtersStore.setCustomRange(start, end); open=false" class="px-3 py-2 text-sm rounded-md bg-[var(--color-primary)] text-black font-semibold">Apply</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Toggles -->
+          <div class="flex items-center gap-1 ml-2" role="group" aria-label="Types">
+            <button @click="toggleType('routes')" :class="{'bg-white/10': activeTypes.has('routes')}" class="px-3 py-2 text-sm rounded-md border border-white/10 hover:bg-white/5">Routes</button>
+            <button @click="toggleType('properties')" :class="{'bg-white/10': activeTypes.has('properties')}" class="px-3 py-2 text-sm rounded-md border border-white/10 hover:bg-white/5">Properties</button>
+            <button @click="toggleType('areas')" :class="{'bg-white/10': activeTypes.has('areas')}" class="px-3 py-2 text-sm rounded-md border border-white/10 hover:bg-white/5">Areas</button>
+          </div>
+
+          <!-- Rarity Dropdown -->
+          <div class="ml-2">
+            <label class="sr-only" for="rarity-min">Rarity</label>
+            <select id="rarity-min" @change="setRarity($event.target.value)" class="px-3 py-2 text-sm rounded-md bg-black/20 border border-white/10">
+              <option value="common">Rarity ≥ Common</option>
+              <option value="rare">Rarity ≥ Rare</option>
+              <option value="epic">Rarity ≥ Epic</option>
+              <option value="legendary">Rarity ≥ Legendary</option>
+            </select>
+          </div>
+
+          <!-- Search -->
+          <div class="ml-auto flex items-center">
+            <label for="filter-search" class="sr-only">Search</label>
+            <input id="filter-search" type="search" placeholder="Search..." @input="setQuery($event.target.value)" class="px-3 py-2 text-sm rounded-md bg-black/20 border border-white/10 w-56"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Map Panel -->
+      <div class="col-span-8 bg-[var(--color-surface)] rounded-xl border border-white/10 overflow-hidden">
+        <div class="flex items-center justify-between p-3 border-b border-white/10">
+          <div class="flex items-center gap-2">
+            <input id="date-picker" type="text" placeholder="Select date" class="px-3 py-2 rounded-md bg-black/20 border border-white/10"/>
+            <button id="refresh-btn" class="px-3 py-2 rounded-md bg-[var(--color-primary)] text-black font-semibold">Refresh</button>
+          </div>
+        </div>
+        <div id="map" class="w-full h-[600px]"></div>
+      </div>
+
+      <!-- Side Panel with Tabs -->
+      <div class="col-span-4 bg-[var(--color-surface)] rounded-xl border border-white/10" x-data="{tab:'watchlist'}">
+        <div class="flex border-b border-white/10">
+          <button :class="{'border-b-2 border-[var(--color-primary)] text-white':tab==='watchlist'}" @click="tab='watchlist'" class="flex-1 px-4 py-3 text-sm text-[var(--color-text-dim)]">Watchlist</button>
+          <button :class="{'border-b-2 border-[var(--color-primary)] text-white':tab==='routes'}" @click="tab='routes'" class="flex-1 px-4 py-3 text-sm text-[var(--color-text-dim)]">Routes</button>
+          <button :class="{'border-b-2 border-[var(--color-primary)] text-white':tab==='activity'}" @click="tab='activity'" class="flex-1 px-4 py-3 text-sm text-[var(--color-text-dim)]">Activity</button>
+        </div>
+        <div class="p-4">
+          <div x-show="tab==='watchlist'">
+            <div id="watchlist-content" class="space-y-3">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+          <div x-show="tab==='routes'" class="space-y-2">
+            <div class="text-sm text-[var(--color-text-dim)]">Recent routes will appear here.</div>
+          </div>
+          <div x-show="tab==='activity'" class="space-y-2">
+            <div class="text-sm text-[var(--color-text-dim)]">Recent activity will appear here.</div>
+          </div>
+        </div>
+      </div>
     </div>
+  </section>
+
+  <!-- Mobile Layout -->
+  <section class="lg:hidden relative">
+    <!-- Filters (compact) -->
+    <div class="px-4 py-2 bg-[var(--color-surface)] border-b border-white/10" x-data="Alpine.store('filtersStore')">
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="flex items-center gap-1" role="group" aria-label="Date range presets">
+          <button @click="setPreset('today')" class="px-2 py-1 text-xs rounded-md border border-white/10">Today</button>
+          <button @click="setPreset('7d')" class="px-2 py-1 text-xs rounded-md border border-white/10">7d</button>
+          <button @click="setPreset('30d')" class="px-2 py-1 text-xs rounded-md border border-white/10">30d</button>
+          <div x-data="{open:false,start:'',end:''}" class="relative">
+            <button @click="open=!open" class="px-2 py-1 text-xs rounded-md border border-white/10">Custom</button>
+            <div x-show="open" @keydown.escape.prevent.stop="open=false" @click.outside="open=false" class="absolute z-20 mt-2 p-2 rounded bg-black/50 backdrop-blur border border-white/10">
+              <div class="flex items-center gap-1">
+                <input type="datetime-local" x-model="start" class="px-2 py-1 rounded bg-black/30 border border-white/10 text-xs"/>
+                <span>–</span>
+                <input type="datetime-local" x-model="end" class="px-2 py-1 rounded bg-black/30 border border-white/10 text-xs"/>
+                <button @click="$store.filtersStore.setCustomRange(start, end); open=false" class="px-2 py-1 text-xs rounded-md bg-[var(--color-primary)] text-black font-semibold">Go</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ml-auto flex items-center gap-2">
+          <label for="filter-search-m" class="sr-only">Search</label>
+          <input id="filter-search-m" type="search" placeholder="Search..." @input="setQuery($event.target.value)" class="px-3 py-2 text-sm rounded-md bg-black/20 border border-white/10 w-40"/>
+        </div>
+      </div>
     </div>
 
-<!-- Discovery Animation Modal -->
-<div id="discovery-modal" class="discovery-modal">
-    <!-- Populated by JS -->
+    <!-- Map full-bleed -->
+    <div class="w-screen -mx-4">
+      <div id="map" class="w-full h-[calc(100vh-220px)]"></div>
+    </div>
+
+    <!-- Floating Action Buttons -->
+    <div class="fixed right-4 bottom-24 flex flex-col items-end gap-3">
+      <button class="px-4 py-3 rounded-full bg-[var(--color-primary)] text-black font-bold shadow-lg">Record Route</button>
+      <button class="px-4 py-3 rounded-full bg-[var(--color-secondary)] text-white font-semibold shadow-lg">Add Property</button>
+    </div>
+
+    <!-- Bottom Tab Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-[var(--color-surface)] border-t border-white/10">
+      <div class="grid grid-cols-4">
+        <button class="flex flex-col items-center py-3 text-sm text-white">
+          <span>Map</span>
+        </button>
+        <button class="flex flex-col items-center py-3 text-sm text-[var(--color-text-dim)]">
+          <span>Routes</span>
+        </button>
+        <button class="flex flex-col items-center py-3 text-sm text-[var(--color-text-dim)]" id="watchlist-toggle">
+          <span>Watchlist</span>
+        </button>
+        <button class="flex flex-col items-center py-3 text-sm text-[var(--color-text-dim)]">
+          <span>Profile</span>
+        </button>
+      </div>
+    </nav>
+  </section>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script src="{{ url_for('static', filename='js/stores/filters.js') }}"></script>
 {% endblock %}
 
 
