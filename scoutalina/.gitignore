@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+.env
+
+# Android / Kivy
+bin/
+.buildozer/
+*.apk
+!releases/*.apk
+*.aab
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Byte-compiled / cache
+.pytest_cache/
+
+# Migrations caches
+server/migrations/*.pyc
+
+
