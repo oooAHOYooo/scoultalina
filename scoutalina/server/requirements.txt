@@ -1,8 +1,13 @@
-Flask==3.0.3
-gunicorn==22.0.0
-itsdangerous==2.2.0
-Jinja2==3.1.4
-Werkzeug==3.0.4
-# TODO: Add SQLAlchemy, Alembic, Auth libs as needed
+flask==3.0.0
+flask-sqlalchemy==3.1.1
+flask-migrate==4.0.5
+flask-cors==4.0.0
+flask-login==0.6.3
+psycopg2-binary==2.9.9
+geoalchemy2==0.14.2
+gunicorn==21.2.0
+requests==2.31.0
+python-dotenv==1.0.0
+alembic==1.12.1
 
 
