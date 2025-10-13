@@ -1,0 +1,4 @@
+kivy==2.3.0
+# TODO: Add plyer, requests if needed for GPS/network
+
+

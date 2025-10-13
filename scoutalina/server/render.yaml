@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: scoutalina-server
+    env: python
+    plan: free
+    rootDir: .
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:application --workers=2 --threads=4 --timeout=120
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      # - key: DATABASE_URL
+      #   value: postgres://user:pass@host:5432/dbname
+
+

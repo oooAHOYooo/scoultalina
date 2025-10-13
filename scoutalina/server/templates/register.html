@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="auth">
+  <h1>Register</h1>
+  <!-- TODO: Implement real registration and validation -->
+  <form method="post" action="#">
+    <label>Email <input type="email" name="email" required /></label>
+    <label>Password <input type="password" name="password" required /></label>
+    <label>Confirm <input type="password" name="confirm" required /></label>
+    <button type="submit">Create Account</button>
+  </form>
+</section>
+{% endblock %}
+
+
