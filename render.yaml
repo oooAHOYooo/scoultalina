@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: scoutalina
+    env: python
+    rootDir: .
+    buildCommand: pip install -r requirements.txt && alembic upgrade head || true
+    startCommand: gunicorn -w 4 -b 0.0.0.0:$PORT wsgi:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase: scoutalina-db
+
+databases:
+  - name: scoutalina-db
+    plan: free
+
+

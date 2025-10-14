@@ -39,23 +39,36 @@ def _ensure_venv_and_requirements() -> None:
     req_root = base / 'requirements.txt'
     req_server = base / 'server' / 'requirements.txt'
     req = req_root if req_root.exists() else req_server
+    stamp = base / '.venv' / '.installed'
 
     if not _in_venv():
         # Create venv if missing, then re-exec within it
         if not venv_python.exists():
             print('[bootstrap] Creating virtualenv at .venv ...')
             subprocess.check_call([sys.executable, '-m', 'venv', str(base / '.venv')])
-        print('[bootstrap] Installing requirements ...')
-        subprocess.check_call([str(venv_python), '-m', 'pip', 'install', '--upgrade', 'pip'])
-        subprocess.check_call([str(venv_python), '-m', 'pip', 'install', '-r', str(req)])
-        print('[bootstrap] Re-launching inside .venv ...')
+        # Install only if not installed before or requirements changed
+        need_install = True
+        try:
+            if stamp.exists() and req.exists() and stamp.stat().st_mtime >= req.stat().st_mtime:
+                need_install = False
+        except Exception:
+            need_install = True
+        if need_install:
+            print('[bootstrap] Installing requirements ...')
+            subprocess.check_call([str(venv_python), '-m', 'pip', 'install', '--upgrade', 'pip'])
+            subprocess.check_call([str(venv_python), '-m', 'pip', 'install', '-r', str(req)])
+            try:
+                stamp.touch()
+            except Exception:
+                pass
+        # Re-exec into venv python
         os.execv(str(venv_python), [str(venv_python), __file__])
 
     # Already in venv: ensure critical deps are present (e.g., geoalchemy2)
     try:
         import geoalchemy2  # noqa: F401
     except Exception:
-        print('[bootstrap] Installing server requirements in current venv ...')
+        # Install once inside venv if missing
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', str(req)])
 
     # Ensure APK folder exists for downloads (support both layouts)
