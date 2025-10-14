@@ -4,6 +4,7 @@ from flask import current_app, redirect, url_for, request, send_from_directory
 import os
 import hashlib
 from datetime import datetime
+import csv
 from flask_login import logout_user
 
 
@@ -116,8 +117,9 @@ def download_apk(filename: str):
     try:
         logs_dir = os.path.join(current_app.root_path, "logs")
         os.makedirs(logs_dir, exist_ok=True)
-        with open(os.path.join(logs_dir, "apk_downloads.csv"), "a", encoding="utf-8") as f:
-            f.write(f"{ts},{ip},\"{(user_agent or '').replace('\\', '\\\\').replace('"', '\\"')}\",{filename},{size_bytes}\n")
+        with open(os.path.join(logs_dir, "apk_downloads.csv"), "a", encoding="utf-8", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow([ts, ip, (user_agent or ""), filename, size_bytes])
     except Exception:
         pass
 

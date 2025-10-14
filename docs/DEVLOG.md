@@ -19,7 +19,6 @@ ScoutAlina Dev Log
 
 Notes
 -----
-- Removed any references to non-existent `ahoyapp` paths; none found in this repo.
 - To publish an APK on Render, commit the file under `server/static/apk/` and redeploy.
 
 

@@ -10,10 +10,7 @@
         date.</p>
       {% if latest %}
       <div class="latest">
-        <a class="btn" href="{{ latest.tracked_url }}" download>Download Latest
-          APK</a>
-        <button class="btn secondary" data-qr="{{ latest.absolute_url }}">Show
-          QR</button>
+        <a class="btn platform-btn" href="{{ latest.tracked_url }}" download>🤖 Download for Android</a>
         <div class="meta">
           <span>{{ (latest.size_bytes / 1048576)|round(2) }} MB</span>
           · <span>Updated {{ latest.modified_at }}</span>
@@ -30,6 +27,7 @@
     </div>
   </div>
   {% if apks and apks|length > 0 %}
+  <details class="other-builds"><summary>Other builds (advanced)</summary>
   <div class="apk-list">
     {% for apk in apks %}
     <div class="apk-card">
@@ -47,18 +45,61 @@
       </div>
       <div class="apk-actions">
         <a class="btn" href="{{ apk.tracked_url }}" download>Download</a>
-        <button class="btn secondary" data-qr="{{ apk.tracked_url }}">Show
-          QR</button>
       </div>
-      <div class="qr" data-for="{{ apk.tracked_url }}"></div>
     </div>
     {% endfor %}
   </div>
+  </details>
   {% else %}
   <p>No APKs found yet. Build one locally and place it in
     <code>server/static/apk/</code>.</p>
   {% endif %}
   <div class="instructions">
+    <h3>Mobile download</h3>
+    <div class="platforms">
+      <div class="platform android">
+        <div class="icon">🤖</div>
+        <div class="copy">
+          <div class="title">Android</div>
+          <div class="desc">Install directly on your phone.</div>
+        </div>
+        {% if latest %}
+        <a class="btn platform-btn" href="{{ latest.tracked_url }}" download>Download APK</a>
+        {% endif %}
+      </div>
+      <div class="platform ios">
+        <div class="icon"></div>
+        <div class="copy">
+          <div class="title">iOS</div>
+          <div class="desc muted">Coming soon</div>
+        </div>
+        <button class="btn secondary" disabled>Coming soon</button>
+      </div>
+    </div>
+    <h3>On-phone install (No ADB)</h3>
+    <button id="start-onphone" class="btn">Show Steps</button>
+    <ol id="onphone-wizard" class="wizard hidden">
+      <li>
+        <h4>Open this page on your Android phone</h4>
+        <p>Use Chrome or your preferred browser.</p>
+      </li>
+      <li>
+        <h4>Download the APK</h4>
+        <p>Tap <strong>Download APK</strong> above. Alternatively, open this page on desktop and scan the Android link as a QR with your phone’s camera.</p>
+      </li>
+      <li>
+        <h4>If blocked, allow installs from your browser</h4>
+        <p>Go to <strong>Settings → Apps → [Your browser] → Install unknown apps</strong> and toggle <strong>Allow</strong>.</p>
+      </li>
+      <li>
+        <h4>Install</h4>
+        <p>Open the downloaded file and tap <strong>Install</strong>.</p>
+      </li>
+      <li>
+        <h4>Launch and sign in</h4>
+        <p>Open the app and enter your API key. Optional: we can add a <strong>Generate Pairing Code</strong> on this page to transfer the key automatically.</p>
+      </li>
+    </ol>
     <h3>How to install the companion app</h3>
     <ol>
       <li>On your Android phone, open this page and tap <strong>Download Latest
@@ -76,6 +117,50 @@
         <li>Copy the newest APK to <code>server/static/apk/</code> as a
           timestamp and <code>scoutalina-latest.apk</code>.</li>
         <li>Then refresh this page and tap Download Latest APK.</li>
+      </ul>
+    </details>
+    <h3>Android Debug Setup (Wizard)</h3>
+    <ol class="wizard">
+      <li>
+        <h4>Enable Developer Options</h4>
+        <p>On your phone, open <strong>Settings → About phone</strong>, tap <strong>Build number</strong> 7 times until it says you’re a developer.</p>
+      </li>
+      <li>
+        <h4>Enable USB Debugging</h4>
+        <p>Go to <strong>Settings → System → Developer options</strong> and toggle <strong>USB debugging</strong> on.</p>
+      </li>
+      <li>
+        <h4>Install ADB (Platform Tools)</h4>
+        <p>On your computer, install Android platform-tools and ensure it’s on your PATH. Verify with:</p>
+        <pre><code>adb version</code></pre>
+      </li>
+      <li>
+        <h4>Connect Device</h4>
+        <p>Connect via USB and run:</p>
+        <pre><code>adb devices</code></pre>
+        <p>Accept the fingerprint prompt on the device if shown.</p>
+      </li>
+      <li>
+        <h4>Get an APK</h4>
+        <p>Download the latest APK above or build locally:</p>
+        <pre><code>python build</code></pre>
+      </li>
+      <li>
+        <h4>Install the APK</h4>
+        <pre><code>adb install -r PATH/TO/scoutalina-debug.apk</code></pre>
+        <p>If prompted on device, allow installs from this source.</p>
+      </li>
+      <li>
+        <h4>Enter Your API Key</h4>
+        <p>Open the app, sign in or paste your API key from the admin user; the app syncs daily.</p>
+      </li>
+    </ol>
+    <details>
+      <summary>Troubleshooting</summary>
+      <ul>
+        <li>Device not listed: try a different cable/port and set USB mode to “File Transfer”.</li>
+        <li>Install blocked: enable <strong>Install unknown apps</strong> for your browser/file manager.</li>
+        <li>ADB not found: ensure platform-tools directory is on PATH.</li>
       </ul>
     </details>
   </div>
@@ -105,6 +190,20 @@
         });
       });
     });
+
+    // Toggle on-phone wizard
+    const startBtn = document.getElementById('start-onphone');
+    const wiz = document.getElementById('onphone-wizard');
+    if (startBtn && wiz) {
+      startBtn.addEventListener('click', () => {
+        wiz.classList.toggle('hidden');
+        if (!wiz.classList.contains('hidden')) {
+          startBtn.textContent = 'Hide On-Phone Steps';
+        } else {
+          startBtn.textContent = 'Start On-Phone Install';
+        }
+      });
+    }
   });
 </script>
 <style>
@@ -117,11 +216,53 @@
   .apk-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin:16px 0}
   .instructions{margin-top:24px}
   .instructions pre{background:#f6f8fa;border:1px solid #eee;border-radius:6px;padding:12px;overflow:auto}
+  .wizard{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;counter-reset:step}
+  .wizard > li{list-style:none;border:1px solid #e5e7eb;border-radius:8px;padding:12px;background:#0b102e;color:#e2e8f0;position:relative}
+  .wizard > li h4{margin:0 0 6px 0;font-size:14px}
+  .wizard > li:before{counter-increment:step;content:counter(step);position:absolute;top:-10px;left:-10px;width:24px;height:24px;border-radius:9999px;background:#00d9ff;color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.2)}
   .apk-card{border:1px solid #ddd;border-radius:8px;padding:12px;background:#fff}
   .apk-actions{display:flex;gap:8px;margin:8px 0}
   .btn{display:inline-block;padding:8px 12px;border-radius:6px;background:#0d6efd;color:#fff;text-decoration:none}
   .btn.secondary{background:#6c757d}
+  .platforms{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin:12px 0}
+  .platform{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid rgba(255,255,255,0.1);border-radius:10px;background:var(--color-surface)}
+  .platform .icon{font-size:28px;line-height:1}
+  .platform .title{font-weight:700}
+  .platform-btn{background:#16a34a}
+  .hidden{display:none}
   .qr{margin-top:8px}
   .checksum code{word-break:break-all}
+  /* Legibility improvements */
+  .downloads{max-width:1100px;margin:0 auto;padding:16px}
+  .downloads h1{font-size:28px;line-height:1.2;margin:8px 0 12px 0}
+  .downloads h2{font-size:20px;margin:4px 0 8px 0}
+  .downloads h3{font-size:18px;margin:16px 0 8px 0}
+  .downloads p, .downloads li{font-size:15px;line-height:1.7;color:var(--color-text)}
+  .hero{background:linear-gradient(180deg, rgba(124,58,237,0.08), rgba(0,217,255,0.08));border-color:rgba(255,255,255,0.08)}
+  .muted{color:var(--color-text-dim)}
+  .apk-card{background:var(--color-surface);border:1px solid rgba(255,255,255,0.08);color:var(--color-text);box-shadow:0 6px 20px rgba(0,0,0,0.2)}
+  .apk-actions .btn{font-weight:600}
+  .btn{font-weight:600}
+  .btn:hover{filter:brightness(1.1)}
+  .wizard{gap:16px}
+  .wizard > li{background:var(--color-surface);border:1px solid rgba(255,255,255,0.1);color:var(--color-text);padding:14px;box-shadow:0 6px 20px rgba(0,0,0,0.2)}
+  .wizard > li:before{background:var(--color-primary);color:#000}
+  .instructions pre{background:#0f172a;color:#e5e7eb;border:1px solid rgba(255,255,255,0.08)}
+  .cmd code{background:#0f172a;color:#e5e7eb;border:1px solid rgba(255,255,255,0.08);font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-size:13.5px}
+  .latest .meta{color:var(--color-text-dim)}
+  .qr{background:transparent}
+  @media (max-width: 768px) {
+    .downloads{padding:12px}
+    .downloads h1{font-size:24px}
+    .downloads h2{font-size:18px}
+    .downloads p, .downloads li{font-size:14px}
+  }
+  @media (max-width: 768px) {
+    .hero {flex-direction: column; align-items: flex-start}
+    .hero-copy {max-width: 100%}
+    .hero-art img{width:80px;height:80px}
+    .latest{flex-wrap: wrap}
+    .apk-list{grid-template-columns: 1fr}
+  }
 }</style>
 {% endblock %}
