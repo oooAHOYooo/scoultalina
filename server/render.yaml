@@ -5,10 +5,11 @@ services:
     plan: free
     rootDir: .
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn wsgi:app --workers=2 --threads=4 --timeout=120
+    startCommand: gunicorn -w 2 -b 0.0.0.0:$PORT wsgi:app --threads=4 --timeout=120
     envVars:
-      - key: FLASK_ENV
-        value: production
+      # Prefer AIM_ENV for environment selection; FLASK_ENV is deprecated/ignored in Flask 3
+      # - key: AIM_ENV
+      #   value: production
       - key: SECRET_KEY
         generateValue: true
       # - key: DATABASE_URL

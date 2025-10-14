@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+import os
+import sys
+import shutil
+import subprocess
+from datetime import datetime
+from pathlib import Path
+
+
+def run(cmd, cwd=None, check=True):
+    print(f"[build] $ {' '.join(cmd)}")
+    return subprocess.run(cmd, cwd=cwd, check=check)
+
+
+def find_newest_apk(bin_dir: Path) -> Path | None:
+    if not bin_dir.exists():
+        return None
+    candidates = [p for p in bin_dir.glob("*.apk") if p.is_file()]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda p: p.stat().st_mtime)
+
+
+def main() -> int:
+    base = Path(__file__).resolve().parent
+    android_dir = base / "android"
+    bin_dir = android_dir / "bin"
+    target_dir = base / "server" / "static" / "apk"
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    # Prefer Dockerized Buildozer for consistent builds
+    used = None
+    if shutil.which("docker"):
+        try:
+            run([
+                "docker", "run", "--rm", "-t",
+                "-v", f"{base}:/work",
+                "-w", "/work/android",
+                "-e", "BUILDOZER_WARN_ON_ROOT=0",
+                "kivy/buildozer",
+                "buildozer", "android", "debug",
+            ])
+            used = "docker-buildozer"
+        except subprocess.CalledProcessError:
+            print("[build] Docker build failed, falling back to native buildozer if available...")
+
+    if used is None:
+        if not shutil.which("buildozer"):
+            print("[build] ERROR: Neither Docker nor native buildozer is available.")
+            print("        Install Docker Desktop, or: pipx install buildozer")
+            return 2
+        run(["buildozer", "android", "debug"], cwd=str(android_dir))
+        used = "native-buildozer"
+
+    newest = find_newest_apk(bin_dir)
+    if not newest or not newest.exists():
+        print(f"[build] ERROR: No APK found in {bin_dir}. The build may have failed.")
+        return 3
+
+    ts = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+    # Create a readable, timestamped name; preserve suffix (debug/release) if present
+    suffix = "-debug" if "debug" in newest.name else ("-release" if "release" in newest.name else "")
+    stamped_name = f"scoutalina-{ts}{suffix}.apk"
+    stamped_path = target_dir / stamped_name
+    latest_path = target_dir / "scoutalina-latest.apk"
+
+    shutil.copy2(str(newest), str(stamped_path))
+    shutil.copy2(str(newest), str(latest_path))
+
+    size_mb = stamped_path.stat().st_size / (1024 * 1024)
+    print(f"[build] Copied: {newest.name} -> {stamped_path.name} ({size_mb:.2f} MB)")
+    print(f"[build] Updated: {latest_path.name} -> {newest.name}")
+
+    print("\nNext:")
+    print("  - Start the server locally if not running: python app.py")
+    print("  - Open Downloads: http://localhost:5000/downloads")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+
+

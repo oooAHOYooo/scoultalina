@@ -2,7 +2,33 @@
 {% block content %}
 <section class="downloads">
   <h1>Downloads</h1>
-  <p>Install ScoutAlina on your Android device.</p>
+  <div class="hero">
+    <div class="hero-copy">
+      <h2>ScoutAlina Companion</h2>
+      <p>The lightweight Android companion that syncs with your ScoutAlina
+        account at the end of each day. Branded, simple, and always up to
+        date.</p>
+      {% if latest %}
+      <div class="latest">
+        <a class="btn" href="{{ latest.tracked_url }}" download>Download Latest
+          APK</a>
+        <button class="btn secondary" data-qr="{{ latest.absolute_url }}">Show
+          QR</button>
+        <div class="meta">
+          <span>{{ (latest.size_bytes / 1048576)|round(2) }} MB</span>
+          · <span>Updated {{ latest.modified_at }}</span>
+        </div>
+      </div>
+      {% else %}
+      <p class="muted">No APK found yet. Place a build under
+        <code>server/static/apk/</code>.</p>
+      {% endif %}
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename='images/logo.png') }}"
+        alt="ScoutAlina" />
+    </div>
+  </div>
   {% if apks and apks|length > 0 %}
   <div class="apk-list">
     {% for apk in apks %}
@@ -32,6 +58,27 @@
   <p>No APKs found yet. Build one locally and place it in
     <code>server/static/apk/</code>.</p>
   {% endif %}
+  <div class="instructions">
+    <h3>How to install the companion app</h3>
+    <ol>
+      <li>On your Android phone, open this page and tap <strong>Download Latest
+          APK</strong> (or scan the QR).</li>
+      <li>If prompted, allow installs from your browser (Unknown sources).</li>
+      <li>Open the app and sign in. It syncs with the main app daily.</li>
+    </ol>
+    <details>
+      <summary>How to build a fresh APK (developer)</summary>
+      <p>From the project root:</p>
+      <pre><code>python build</code></pre>
+      <p>This will:</p>
+      <ul>
+        <li>Build via Dockerized Buildozer (or native fallback).</li>
+        <li>Copy the newest APK to <code>server/static/apk/</code> as a
+          timestamp and <code>scoutalina-latest.apk</code>.</li>
+        <li>Then refresh this page and tap Download Latest APK.</li>
+      </ul>
+    </details>
+  </div>
   {% if config.DEBUG %}
   <form method="post" action="/dev/build-apk">
     <button type="submit">Build Debug APK (dev only)</button>
@@ -61,7 +108,15 @@
   });
 </script>
 <style>
+  .hero{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:16px;margin:8px 0;border:1px solid #eee;border-radius:12px;background:linear-gradient(135deg,#f5f3ff, #eef2ff)}
+  .hero-copy{max-width:720px}
+  .hero-art img{width:120px;height:120px;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.1))}
+  .latest{display:flex;align-items:center;gap:12px;margin-top:8px}
+  .meta{font-size:12px;color:#555}
+  .muted{color:#666}
   .apk-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin:16px 0}
+  .instructions{margin-top:24px}
+  .instructions pre{background:#f6f8fa;border:1px solid #eee;border-radius:6px;padding:12px;overflow:auto}
   .apk-card{border:1px solid #ddd;border-radius:8px;padding:12px;background:#fff}
   .apk-actions{display:flex;gap:8px;margin:8px 0}
   .btn{display:inline-block;padding:8px 12px;border-radius:6px;background:#0d6efd;color:#fff;text-decoration:none}

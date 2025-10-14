@@ -65,7 +65,29 @@ def downloads():
             )
         )
 
-    return render_template("downloads.html", title="Downloads", apks=apks)
+    # Compute latest file metadata for hero section
+    latest = None
+    try:
+        candidates = [
+            os.path.join(apk_dir, f) for f in os.listdir(apk_dir) if f.lower().endswith(".apk")
+        ]
+        if candidates:
+            newest_path = max(candidates, key=lambda p: os.path.getmtime(p))
+            newest_name = os.path.basename(newest_path)
+            newest_stat = os.stat(newest_path)
+            newest_size = newest_stat.st_size
+            newest_mtime = datetime.fromtimestamp(newest_stat.st_mtime).isoformat()
+            latest = dict(
+                filename=newest_name,
+                tracked_url=url_for("web.download_apk", filename=newest_name),
+                absolute_url=url_for("web.download_apk", filename=newest_name, _external=True),
+                size_bytes=newest_size,
+                modified_at=newest_mtime,
+            )
+    except Exception:
+        latest = None
+
+    return render_template("downloads.html", title="Downloads", apks=apks, latest=latest)
 
 
 @web_bp.get("/downloads/apk/<path:filename>")

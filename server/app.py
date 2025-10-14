@@ -14,24 +14,38 @@ login_manager = LoginManager()
 
 
 def _configure_logging(app: Flask) -> None:
+    # Determine dev mode without accessing app.env (removed in Flask 3)
+    is_dev = app.debug or os.getenv("FLASK_DEBUG") == "1" or os.getenv("AIM_ENV", "").lower().startswith("dev")
+
     log_dir = os.path.join(app.root_path, 'logs')
     os.makedirs(log_dir, exist_ok=True)
     log_path = os.path.join(log_dir, 'scoutalina.log')
 
     formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
 
+    # Configure root logger level early so attached handlers inherit appropriately
+    level = logging.DEBUG if is_dev else logging.INFO
+    logging.getLogger().setLevel(level)
+    for h in logging.getLogger().handlers:
+        h.setLevel(level)
+
     file_handler = RotatingFileHandler(log_path, maxBytes=10 * 1024 * 1024, backupCount=5)
-    file_handler.setLevel(logging.INFO)
+    file_handler.setLevel(level)
     file_handler.setFormatter(formatter)
     app.logger.addHandler(file_handler)
 
-    if app.debug or os.environ.get('FLASK_ENV') == 'development' or app.config.get('DEBUG', False):
+    # Console output in dev for easier debugging
+    if is_dev:
         console_handler = logging.StreamHandler()
         console_handler.setLevel(logging.DEBUG)
         console_handler.setFormatter(formatter)
         app.logger.addHandler(console_handler)
 
-    app.logger.setLevel(logging.INFO)
+    # Quiet noisy libraries in non-dev
+    if not is_dev:
+        logging.getLogger("werkzeug").setLevel(logging.WARNING)
+
+    app.logger.setLevel(level)
 
 
 def _register_error_handlers(app: Flask) -> None:
