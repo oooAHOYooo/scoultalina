@@ -35,7 +35,10 @@ def _venv_python() -> Path:
 def _ensure_venv_and_requirements() -> None:
     base = Path(__file__).resolve().parent
     venv_python = _venv_python()
-    req = base / 'server' / 'requirements.txt'
+    # Prefer root requirements.txt, fallback to server/requirements.txt
+    req_root = base / 'requirements.txt'
+    req_server = base / 'server' / 'requirements.txt'
+    req = req_root if req_root.exists() else req_server
 
     if not _in_venv():
         # Create venv if missing, then re-exec within it
@@ -55,8 +58,8 @@ def _ensure_venv_and_requirements() -> None:
         print('[bootstrap] Installing server requirements in current venv ...')
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', str(req)])
 
-    # Ensure APK folder exists for downloads
-    apk_dir = base / 'server' / 'static' / 'apk'
+    # Ensure APK folder exists for downloads (support both layouts)
+    apk_dir = (base / 'static' / 'apk') if (base / 'static').exists() else (base / 'server' / 'static' / 'apk')
     apk_dir.mkdir(parents=True, exist_ok=True)
 
 
@@ -64,7 +67,10 @@ def main() -> None:
     _ensure_venv_and_requirements()
 
     # Import after ensuring deps are installed and venv active
-    from server.app import create_app  # type: ignore
+    try:
+        from server.app import create_app  # type: ignore
+    except Exception:
+        from app import create_app  # type: ignore
 
     env = os.environ.get("FLASK_ENV", "development")
     app = create_app(env if env in ("development", "production", "testing") else "development")
