@@ -25,7 +25,7 @@ def _configure_logging(app: Flask) -> None:
     file_handler.setFormatter(formatter)
     app.logger.addHandler(file_handler)
 
-    if app.debug or app.env == 'development':
+    if app.debug or os.environ.get('FLASK_ENV') == 'development' or app.config.get('DEBUG', False):
         console_handler = logging.StreamHandler()
         console_handler.setLevel(logging.DEBUG)
         console_handler.setFormatter(formatter)
