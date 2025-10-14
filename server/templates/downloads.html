@@ -3,21 +3,70 @@
 <section class="downloads">
   <h1>Downloads</h1>
   <p>Install ScoutAlina on your Android device.</p>
-  <ul>
-    <li>
-      <a href="/static/apk/scoutalina-debug.apk" download>Download Debug APK</a>
-    </li>
-    <li>
-      <a href="/static/apk/scoutalina-release.apk" download>Download Release APK</a>
-    </li>
-  </ul>
+  {% if apks and apks|length > 0 %}
+  <div class="apk-list">
+    {% for apk in apks %}
+    <div class="apk-card">
+      <div class="apk-meta">
+        <h3>{{ apk.filename }}</h3>
+        <p>
+          <strong>Size:</strong> {{ (apk.size_bytes / 1048576)|round(2) }} MB
+          {% if apk.modified_at %} · <strong>Updated:</strong> {{
+          apk.modified_at }}{% endif %}
+        </p>
+        {% if apk.sha256 %}
+        <p class="checksum"><strong>SHA256:</strong> <code>{{ apk.sha256
+            }}</code></p>
+        {% endif %}
+      </div>
+      <div class="apk-actions">
+        <a class="btn" href="{{ apk.tracked_url }}" download>Download</a>
+        <button class="btn secondary" data-qr="{{ apk.tracked_url }}">Show
+          QR</button>
+      </div>
+      <div class="qr" data-for="{{ apk.tracked_url }}"></div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p>No APKs found yet. Build one locally and place it in
+    <code>server/static/apk/</code>.</p>
+  {% endif %}
   {% if config.DEBUG %}
   <form method="post" action="/dev/build-apk">
     <button type="submit">Build Debug APK (dev only)</button>
   </form>
   {% endif %}
-  <p>After installing, open the app and enter your API key from the admin user.</p>
+  <p>After installing, open the app and enter your API key from the admin
+    user.</p>
 </section>
 {% endblock %}
-
-
+{% block extra_js %}
+<script
+  src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('button[data-qr]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const url = btn.getAttribute('data-qr');
+        const qrContainer = btn.closest('.apk-card').querySelector('.qr');
+        qrContainer.innerHTML = '';
+        const canvas = document.createElement('canvas');
+        qrContainer.appendChild(canvas);
+        QRCode.toCanvas(canvas, url, { width: 180 }, (error) => {
+          if (error) console.error(error);
+        });
+      });
+    });
+  });
+</script>
+<style>
+  .apk-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin:16px 0}
+  .apk-card{border:1px solid #ddd;border-radius:8px;padding:12px;background:#fff}
+  .apk-actions{display:flex;gap:8px;margin:8px 0}
+  .btn{display:inline-block;padding:8px 12px;border-radius:6px;background:#0d6efd;color:#fff;text-decoration:none}
+  .btn.secondary{background:#6c757d}
+  .qr{margin-top:8px}
+  .checksum code{word-break:break-all}
+}</style>
+{% endblock %}
