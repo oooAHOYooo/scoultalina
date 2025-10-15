@@ -304,6 +304,36 @@ Index("idx_route_properties_distance", RouteProperty.distance_meters)
 
 
 # -----------------------------
+# DeviceLinkCode Model
+# -----------------------------
+class DeviceLinkCode(db.Model):
+    """Short-lived, single-use code for linking a device to a user.
+
+    Generated on demand by an authenticated user. The mobile app exchanges the
+    code for the user's API key without requiring username/password on device.
+    """
+
+    __tablename__ = "device_link_codes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    code: Mapped[str] = mapped_column(String(16), unique=True, index=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    used_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    user: Mapped[User] = relationship()
+
+    def is_valid(self, now: Optional[datetime] = None) -> bool:
+        now = now or datetime.utcnow()
+        return (not self.used) and (self.expires_at > now)
+
+
+
+# -----------------------------
 # Helpers
 # -----------------------------
 def init_db(app) -> None:

@@ -8,6 +8,7 @@ watchlist, stats, and health checks.
 
 import re
 from datetime import date, datetime, timedelta
+import secrets
 from typing import Any, Dict, List, Optional
 
 from flask import Blueprint, jsonify, request, g
@@ -15,7 +16,7 @@ from sqlalchemy import func, text
 from sqlalchemy.orm import joinedload
 
 from ..app import db
-from ..models import Property, Route, RoutePoint, RouteProperty, User, Watchlist
+from ..models import Property, Route, RoutePoint, RouteProperty, User, Watchlist, DeviceLinkCode
 from ..services.auth import require_api_key
 
 
@@ -362,4 +363,53 @@ def health():
         "timestamp": datetime.utcnow().isoformat() + "Z",
     }), (200 if db_ok else 503)
 
+
+
+# -----------------------------
+# Device Link Endpoints
+# -----------------------------
+
+def _generate_link_code(length: int = 8) -> str:
+    # URL-safe, uppercase without confusing chars (no I/O/1/0)
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    return "".join(alphabet[secrets.randbelow(len(alphabet))] for _ in range(length))
+
+
+@api_bp.post("/device_link/create")
+@require_api_key
+def create_device_link():
+    code = _generate_link_code(8)
+    expires = datetime.utcnow() + timedelta(minutes=5)
+    row = DeviceLinkCode(user_id=g.current_user.id, code=code, expires_at=expires)
+    db.session.add(row)
+    db.session.commit()
+    return jsonify({"code": code, "expires_at": expires.isoformat() + "Z"}), 201
+
+
+@api_bp.post("/device_link/exchange")
+def exchange_device_link():
+    data = request.get_json(silent=True) or {}
+    code = (data.get("code") or "").strip().upper()
+    if not code:
+        return _json_error("code is required")
+
+    row: DeviceLinkCode | None = db.session.query(DeviceLinkCode).filter_by(code=code).first()
+    if not row or not row.is_valid():
+        return _json_error("Invalid or expired code", 401)
+
+    row.used = True
+    row.used_at = datetime.utcnow()
+
+    user = db.session.get(User, row.user_id)
+    if not user:
+        return _json_error("User not found", 404)
+    if not user.api_key:
+        user.generate_api_key()
+
+    db.session.commit()
+    return jsonify({
+        "status": "success",
+        "api_key": user.api_key,
+        "user": {"username": user.username, "email": user.email},
+    })
 

@@ -1,0 +1,28 @@
+name: Android APK (Buildozer)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build debug APK with Buildozer (Docker)
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}/android:/home/user/app" \
+            -w /home/user/app \
+            kivy/buildozer \
+            buildozer -v android debug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scoutalina-debug-apk
+          path: android/bin/*.apk
+          if-no-files-found: error
+
+
