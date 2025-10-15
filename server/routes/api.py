@@ -413,3 +413,40 @@ def exchange_device_link():
         "user": {"username": user.username, "email": user.email},
     })
 
+
+@api_bp.post("/device_link/admin_create")
+def admin_create_device_link():
+    # Minimal admin-secret gate to mint codes without user session
+    admin_secret = (request.headers.get("X-Admin-Secret") or request.args.get("admin_secret") or "").strip()
+    configured = (request.app.config.get("SECRET_KEY") or "").strip() if hasattr(request, 'app') else None
+    # Fallback: use environment variable directly
+    import os as _os
+    configured = configured or _os.environ.get('ADMIN_LINK_SECRET') or _os.environ.get('SECRET_KEY')
+    if not configured or admin_secret != configured:
+        return _json_error("Unauthorized", 401)
+
+    data = request.get_json(silent=True) or {}
+    label = (data.get("label") or request.args.get("label") or "tester").strip() or "tester"
+
+    # Get or create a lightweight user for this label
+    email = f"{label}@example.test"
+    user = db.session.query(User).filter((User.username == label) | (User.email == email)).first()
+    if not user:
+        user = User(username=label, email=email)
+        user.set_password("not-used-123")
+        user.generate_api_key()
+        db.session.add(user)
+        db.session.commit()
+    elif not user.api_key:
+        user.generate_api_key()
+        db.session.commit()
+
+    # Mint a code
+    code = _generate_link_code(8)
+    expires = datetime.utcnow() + timedelta(days=7)
+    row = DeviceLinkCode(user_id=user.id, code=code, expires_at=expires)
+    db.session.add(row)
+    db.session.commit()
+
+    return jsonify({"code": code, "expires_at": expires.isoformat() + "Z", "user": {"username": user.username}}), 201
+
