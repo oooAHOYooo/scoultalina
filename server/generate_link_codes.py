@@ -25,8 +25,12 @@ from .models import DeviceLinkCode, User
 
 
 def ensure_tables() -> None:
-    # Create missing tables (dev convenience; use migrations in prod)
-    db.create_all()
+    # Create only the device link table to avoid PostGIS requirements on SQLite
+    try:
+        DeviceLinkCode.__table__.create(bind=db.engine, checkfirst=True)
+    except Exception:
+        # Fallback to create_all if the engine supports all types
+        db.create_all()
 
 
 def get_or_create_user(label: str) -> User:

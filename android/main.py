@@ -81,7 +81,10 @@ class ScoutAlinaApp(App):
         self.collected_points = []
         self._tick_ev = None
         self._gps_active = False
-        return RootLayout()
+        root = RootLayout()
+        # Attempt to upload any pending files on startup
+        Clock.schedule_once(lambda *_: self._retry_pending_uploads(), 0)
+        return root
 
     def start_collection(self):
         if self.is_collecting:
@@ -244,6 +247,19 @@ class ScoutAlinaApp(App):
                     self.status_text = "Upload complete"
         except Exception:
             # Best-effort; leave file on disk for later retry
+            pass
+
+    def _retry_pending_uploads(self):
+        cfg = self._load_config()
+        if not cfg.get("server_base_url") or not cfg.get("api_key"):
+            return
+        try:
+            for name in sorted(os.listdir(self._routes_dir())):
+                if not name.endswith('.json'):
+                    continue
+                path = os.path.join(self._routes_dir(), name)
+                self._try_upload(path)
+        except Exception:
             pass
 
     # --- Device link (code exchange) ---

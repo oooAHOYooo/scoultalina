@@ -1,4 +1,4 @@
-#!/Users/ag/scoultalina/.venv/bin/python
+#!/Users/agworkywork/scoultalina/.venv/bin/python3.13
 import sys
 from alembic.config import main
 if __name__ == '__main__':
