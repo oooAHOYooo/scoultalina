@@ -6,6 +6,8 @@ on:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -13,8 +15,8 @@ jobs:
       - name: Build debug APK with Buildozer (Docker)
         run: |
           docker run --rm \
-            -v "${{ github.workspace }}/android:/home/user/app" \
-            -w /home/user/app \
+            -v "${{ github.workspace }}:/home/user/app" \
+            -w /home/user/app/android \
             kivy/buildozer \
             buildozer -v android debug
 
@@ -24,5 +26,27 @@ jobs:
           name: scoutalina-debug-apk
           path: android/bin/*.apk
           if-no-files-found: error
+
+      - name: Copy APK into server/static/apk
+        run: |
+          set -euo pipefail
+          APK_DIR="${{ github.workspace }}/android/bin"
+          OUT_DIR="${{ github.workspace }}/server/static/apk"
+          mkdir -p "$OUT_DIR"
+          LATEST_APK=$(ls -t "$APK_DIR"/*.apk | head -n1)
+          echo "Latest APK: $LATEST_APK"
+          ts=$(date +%Y%m%d-%H%M%S)
+          cp "$LATEST_APK" "$OUT_DIR/"
+          cp "$LATEST_APK" "$OUT_DIR/scoutalina-${ts}.apk"
+          cp "$LATEST_APK" "$OUT_DIR/scoutalina-latest.apk"
+
+      - name: Commit APK to repository (for downloads page)
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add server/static/apk/*.apk
+          git commit -m "CI: add latest Android debug APK [skip ci]" || echo "No changes to commit"
+          git push || echo "Push skipped"
 
 
