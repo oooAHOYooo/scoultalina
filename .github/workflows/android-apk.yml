@@ -12,13 +12,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install dependencies (JDK, pipx)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openjdk-17-jdk python3-venv pipx
+          python3 -m pipx ensurepath
+
+      - name: Install buildozer via pipx
+        run: |
+          pipx install buildozer
+
       - name: Build debug APK with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
+        working-directory: android
         env:
-          USER: root
-        with:
-          workdir: android
-          command: buildozer -v android debug
+          ANDROIDDEBUG: "1"
+        run: |
+          ~/.local/bin/buildozer -v android debug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
